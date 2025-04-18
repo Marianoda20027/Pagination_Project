@@ -24,7 +24,7 @@ namespace PaginationApp.Services.Parts
         public async Task<PaginatedResult<PartDto>> GetPaginatedPartsAsync(
             int pageNumber,
             int pageSize,
-            Dictionary<string, string> filters = null)
+            Dictionary<string, string>? filters = null)
         {
             return await _partSearchService.SearchPartsAsync(pageNumber, pageSize, filters);
         }

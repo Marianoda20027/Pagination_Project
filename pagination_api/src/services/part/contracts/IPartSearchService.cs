@@ -9,6 +9,6 @@ namespace PaginationApp.Services.Parts.Contracts
         Task<PaginatedResult<PartDto>> SearchPartsAsync(
             int pageNumber, 
             int pageSize, 
-            Dictionary<string, string> filters = null);
+            Dictionary<string, string>? filters = null);
     }
 }

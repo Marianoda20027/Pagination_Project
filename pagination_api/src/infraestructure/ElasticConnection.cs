@@ -1,23 +1,58 @@
 using Elasticsearch.Net;
 using System;
 
-public class ElasticConnection
+public class ElasticConnection : IDisposable
 {
     private readonly ElasticLowLevelClient _client;
+    private bool _disposed = false;
 
     public ElasticConnection(string cloudUrl, string username, string password)
     {
-        if (string.IsNullOrEmpty(cloudUrl))
-            throw new ArgumentException("URL de Elasticsearch no puede ser nula o vacía.");
-        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
-            throw new ArgumentException("El usuario y la contraseña no pueden ser nulos o vacíos.");
+        if (string.IsNullOrWhiteSpace(cloudUrl))
+            throw new ArgumentException("URL de Elasticsearch no puede ser nula o vacía.", nameof(cloudUrl));
+        if (string.IsNullOrWhiteSpace(username))
+            throw new ArgumentException("El usuario no puede ser nulo o vacío.", nameof(username));
+        if (string.IsNullOrWhiteSpace(password))
+            throw new ArgumentException("La contraseña no puede ser nula o vacía.", nameof(password));
 
         var pool = new SingleNodeConnectionPool(new Uri(cloudUrl));
         var connectionSettings = new ConnectionConfiguration(pool)
-            .BasicAuthentication(username, password);  // Usar autenticación básica
+            .BasicAuthentication(username, password);
 
         _client = new ElasticLowLevelClient(connectionSettings);
     }
 
-    public ElasticLowLevelClient Client => _client;
+    public ElasticLowLevelClient Client
+    {
+        get
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(ElasticConnection));
+            return _client;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                // Liberar recursos administrados
+                (_client as IDisposable)?.Dispose();
+            }
+            _disposed = true;
+        }
+    }
+
+    ~ElasticConnection()
+    {
+        Dispose(false);
+    }
 }

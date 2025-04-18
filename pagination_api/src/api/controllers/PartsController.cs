@@ -3,7 +3,6 @@ using PaginationApp.Core.Exceptions;
 using PaginationApp.Core.Models;
 using PaginationApp.Services.Parts;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -26,64 +25,67 @@ namespace PaginationApp.Api.Controllers
         public async Task<IActionResult> GetPaginatedParts(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
-            [FromQuery] string category = null,
-            [FromQuery] string partCode = null,
+            [FromQuery] string? category = null,
+            [FromQuery] string? partCode = null,
+            [FromQuery] string? technicalSpecs = null,
             [FromQuery] int? minStock = null,
             [FromQuery] int? maxStock = null,
-            [FromQuery] string productionDateStart = null,
-            [FromQuery] string productionDateEnd = null)
+            [FromQuery] decimal? minUnitWeight = null,
+            [FromQuery] decimal? maxUnitWeight = null,
+            [FromQuery] string? productionDateStart = null,
+            [FromQuery] string? productionDateEnd = null,
+            [FromQuery] string? lastModifiedStart = null,
+            [FromQuery] string? lastModifiedEnd = null)
         {
-            try
-            {
-                _logger.LogInformation($"Solicitud recibida. Página: {pageNumber}, Tamaño: {pageSize}");
 
-                if (pageNumber < 1 || pageSize < 1 || pageSize > 100)
-                {
-                    _logger.LogWarning("Parámetros de paginación inválidos");
-                    throw new BadRequestException("Parámetros de paginación inválidos");
-                }
+            if (pageNumber < 1) 
+                throw new BadRequestException("Número de página inválido (debe ser ≥ 1)");
+            if (pageSize < 1 || pageSize > 100) 
+                throw new BadRequestException("Tamaño de página inválido (debe ser 1-100)");
 
-                var filters = new Dictionary<string, string>();
+            var filters = new Dictionary<string, string>();
+            
+            if (!string.IsNullOrEmpty(category))
+                filters.Add("Category", category);
                 
-                if (!string.IsNullOrEmpty(category))
-                    filters.Add("Category", category);
-                    
-                if (!string.IsNullOrEmpty(partCode))
-                    filters.Add("PartCode", partCode);
-                    
-                if (minStock.HasValue)
-                    filters.Add("MinStockQuantity", minStock.Value.ToString());
-                    
-                if (maxStock.HasValue)
-                    filters.Add("MaxStockQuantity", maxStock.Value.ToString());
-                    
-                if (!string.IsNullOrEmpty(productionDateStart))
-                    filters.Add("ProductionDateStart", productionDateStart);
-                    
-                if (!string.IsNullOrEmpty(productionDateEnd))
-                    filters.Add("ProductionDateEnd", productionDateEnd);
-
-                var result = await _partService.GetPaginatedPartsAsync(pageNumber, pageSize, filters);
+            if (!string.IsNullOrEmpty(partCode))
+                filters.Add("PartCode", partCode);
                 
-                if (result.Total == 0)
-                {
-                    _logger.LogInformation("No se encontraron resultados");
-                    return NotFound(new { Message = "No se encontraron resultados con los criterios de búsqueda" });
-                }
+            if (!string.IsNullOrEmpty(technicalSpecs))
+                filters.Add("TechnicalSpecs", technicalSpecs);
+                
+            if (minStock.HasValue)
+                filters.Add("MinStockQuantity", minStock.Value.ToString());
+                
+            if (maxStock.HasValue)
+                filters.Add("MaxStockQuantity", maxStock.Value.ToString());
+                
+            if (minUnitWeight.HasValue)
+                filters.Add("MinUnitWeight", minUnitWeight.Value.ToString());
+                
+            if (maxUnitWeight.HasValue)
+                filters.Add("MaxUnitWeight", maxUnitWeight.Value.ToString());
+                
+            if (!string.IsNullOrEmpty(productionDateStart))
+                filters.Add("ProductionDateStart", productionDateStart);
+                
+            if (!string.IsNullOrEmpty(productionDateEnd))
+                filters.Add("ProductionDateEnd", productionDateEnd);
+                
+            if (!string.IsNullOrEmpty(lastModifiedStart))
+                filters.Add("LastModifiedStart", lastModifiedStart);
+                
+            if (!string.IsNullOrEmpty(lastModifiedEnd))
+                filters.Add("LastModifiedEnd", lastModifiedEnd);
 
-                _logger.LogInformation($"Devolviendo {result.Items.Count} de {result.Total} resultados");
-                return Ok(result);
-            }
-            catch (BadRequestException ex)
+            var result = await _partService.GetPaginatedPartsAsync(pageNumber, pageSize, filters);
+            
+            if (result.Total == 0)
             {
-                _logger.LogWarning(ex.Message);
-                return BadRequest(new { ex.Message });
+                _logger.LogInformation("No se encontraron resultados");
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error interno del servidor");
-                return StatusCode(500, new { Message = "Error interno del servidor" });
-            }
+
+            return Ok(result);
         }
     }
 }

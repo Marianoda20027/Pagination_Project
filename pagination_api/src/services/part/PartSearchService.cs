@@ -19,7 +19,7 @@ namespace PaginationApp.Services.Parts
             _mapper = mapper;
         }
 
-        public async Task<PaginatedResult<PartDto>> SearchPartsAsync(int pageNumber, int pageSize, Dictionary<string, string> filters = null)
+        public async Task<PaginatedResult<PartDto>> SearchPartsAsync(int pageNumber, int pageSize, Dictionary<string, string>? filters = null)
         {
             var response = await _searchService.SearchPartsAsync(filters ?? new Dictionary<string, string>(), pageNumber, pageSize);
             return _mapper.MapToPaginatedResult(response, pageNumber, pageSize);
